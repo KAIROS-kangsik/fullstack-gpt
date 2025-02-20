@@ -1,0 +1,6 @@
+env/
+.DS_Store
+.env
+practice_class.py
+.cache/
+.streamlit
