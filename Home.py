@@ -16,10 +16,16 @@ st.markdown(
     제가 만든 앱들입니다😁:
 
     - [x] [DocumentGPT](/DocumentGPT)  
-    - [ ] [PrivateGPT](/PrivateGPT)  
-    - [ ] [QuizGPT](/QuizGPT)  
-    - [ ] [SiteGPT](/SiteGPT)  
+    - [x] [PrivateGPT](/PrivateGPT)  
+    - [x] [QuizGPT](/QuizGPT)  
+    - [x] [SiteGPT](/SiteGPT)  
     - [ ] [MeetingGPT](/MeetingGPT)  
     - [ ] [InvestorGPT](/InvestorGPT)  
     """
 )
+
+with st.sidebar:
+    video = st.file_uploader(
+        "Video",
+        type=["mp4", "avi", "mkv", "mov"],
+    )
