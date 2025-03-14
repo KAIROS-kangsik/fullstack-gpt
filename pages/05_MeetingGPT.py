@@ -14,6 +14,7 @@ from langchain.vectorstores.faiss import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.storage import LocalFileStore
 from langchain.embeddings import CacheBackedEmbeddings
+from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 
 st.set_page_config(
     page_icon="🤖",
@@ -35,6 +36,45 @@ splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
     chunk_size=800,
     chunk_overlap=200,
 )
+
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+            Answer the question using ONLY the following context.
+            If you don't know the answer just say you don't know.
+            DON'T make anything up.
+            And if the user asks a question in Korean, answer in Korean, and if the user asks a question in English, answer in English.
+     
+            Context: {context}
+            """,
+        ),
+        ("human", "{question}"),
+    ]
+)
+
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+def save_message(message, role):
+    st.session_state["messages"].append(
+        {
+            "message": message,
+            "role": role,
+        }
+    )
+
+
+def paint_messges():
+    for message in st.session_state["messages"]:
+        with st.chat_message(message["role"]):
+            st.write(message["message"])
 
 
 @st.cache_resource()
@@ -209,6 +249,33 @@ if video:
     with qa_tab:
         retriever = embed_file(transcript_path)
 
-        docs = retriever.invoke("어떤 얘기를 하고 있나요? 한문장으로 말해주세요.")
+        chain = (
+            {
+                "context": retriever | RunnableLambda(format_docs),
+                "question": RunnablePassthrough(),
+            }
+            | prompt
+            | llm
+        )
 
-        st.write(docs)
+        # paint_messges()
+
+        message = st.text_input("영상에 대해 질문하세요.")
+
+        if message:
+            save_message(message=message, role="human")
+            ai_message = chain.invoke(message)
+            save_message(ai_message.content, "ai")
+            paint_messges()
+            # with st.chat_message("ai"):
+            #     ai_message = chain.invoke(message)
+            #     st.write(ai_message.content)
+            #     save_message(ai_message.content, "ai")
+            # paint_messges()
+
+# st.write(st.session_state["messages"])
+
+
+# docs = retriever.invoke("어떤 얘기를 하고 있나요? 한문장으로 말해주세요.")
+
+# st.write(docs)
